@@ -1,34 +1,42 @@
 (function () {
-  const domain = window.location.origin;
-  const slugMatch = window.location.pathname.match(/\/(\d{4}\/\d{2}\/[^.]+)\.html/);
-  const slug = slugMatch ? slugMatch[1] : '';
+  const titleStyle = "font-size:20px;color:#2c3e50;margin-bottom:10px;";
+  const listStyle = "list-style-type:📌;padding-left:20px;font-size:16px;line-height:1.5;";
+  const containerStyle = "background:#f9f9f9;border-left:4px solid #007bff;padding:15px;margin:30px 0;border-radius:8px;";
 
-  function inject(posts) {
-    if (!posts.length) return;
-    const container = document.createElement('div');
-    container.style = "margin:30px 0;padding:20px;background:#fdfdfd;border:1px solid #ccc;border-radius:8px;";
-    container.innerHTML = '<h3>🔎 People Also Read</h3>';
-    posts.slice(0, 3).forEach(p => {
-      const item = document.createElement('div');
-      item.style.margin = '8px 0';
-      item.innerHTML = `<a href="${p.url}" style="color:#1565c0;text-decoration:none;">📌 ${p.title}</a>`;
-      container.appendChild(item);
-    });
-    const footer = document.querySelector('footer') || document.body;
-    footer.parentNode.insertBefore(container, footer);
-  }
+  const showRelated = (posts) => {
+    const box = document.createElement("div");
+    box.style = containerStyle;
+    box.innerHTML = `<div style="${titleStyle}">📚 People Also Read</div><ul style="${listStyle}">
+      ${posts.map(p => `<li><a href="${p.link}" style="color:#007bff;text-decoration:none;">${p.title}</a></li>`).join("")}
+    </ul>`;
+    
+    const target = document.querySelector(".post-body") || document.querySelector(".entry-content") || document.querySelector("article");
+    if (target) target.appendChild(box);
+  };
 
-  function callback(data) {
-    const entries = data.feed.entry || [];
-    const posts = entries.map(entry => ({
-      title: entry.title.$t,
-      url: entry.link.find(l => l.rel === 'alternate').href.split('?')[0]
-    })).filter(p => !p.url.includes(slug));
+  const fetchPosts = async () => {
+    const blogURL = location.origin;
+    const feedURL = `${blogURL}/feeds/posts/default?alt=json&max-results=6`;
 
-    inject(posts.sort(() => 0.5 - Math.random()));
-  }
+    try {
+      const res = await fetch(feedURL);
+      const json = await res.json();
+      const entries = json.feed.entry || [];
 
-  const script = document.createElement('script');
-  script.src = `${domain}/feeds/posts/summary?alt=json-in-script&callback=callback&max-results=10`;
-  document.body.appendChild(script);
+      const currentURL = location.href;
+      const posts = entries
+        .filter(entry => !currentURL.includes(entry.link[4].href)) // exclude current post
+        .slice(0, 3)
+        .map(entry => ({
+          title: entry.title.$t,
+          link: entry.link.find(l => l.rel === "alternate").href
+        }));
+
+      showRelated(posts);
+    } catch (e) {
+      console.warn("Related posts fetch error:", e);
+    }
+  };
+
+  fetchPosts();
 })();
