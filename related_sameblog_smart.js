@@ -1,42 +1,31 @@
 (function () {
-  const titleStyle = "font-size:20px;color:#2c3e50;margin-bottom:10px;";
-  const listStyle = "list-style-type:📌;padding-left:20px;font-size:16px;line-height:1.5;";
-  const containerStyle = "background:#f9f9f9;border-left:4px solid #007bff;padding:15px;margin:30px 0;border-radius:8px;";
-
-  const showRelated = (posts) => {
-    const box = document.createElement("div");
-    box.style = containerStyle;
-    box.innerHTML = `<div style="${titleStyle}">📚 People Also Read</div><ul style="${listStyle}">
-      ${posts.map(p => `<li><a href="${p.link}" style="color:#007bff;text-decoration:none;">${p.title}</a></li>`).join("")}
-    </ul>`;
-    
-    const target = document.querySelector(".post-body") || document.querySelector(".entry-content") || document.querySelector("article");
-    if (target) target.appendChild(box);
+  const getSlug = () => {
+    const m = window.location.pathname.match(/\/(\d{4}\/\d{2}\/[^.]+)\.html/);
+    return m ? m[1] : "";
   };
-
-  const fetchPosts = async () => {
-    const blogURL = location.origin;
-    const feedURL = `${blogURL}/feeds/posts/default?alt=json&max-results=6`;
-
-    try {
-      const res = await fetch(feedURL);
-      const json = await res.json();
-      const entries = json.feed.entry || [];
-
-      const currentURL = location.href;
-      const posts = entries
-        .filter(entry => !currentURL.includes(entry.link[4].href)) // exclude current post
-        .slice(0, 3)
-        .map(entry => ({
-          title: entry.title.$t,
-          link: entry.link.find(l => l.rel === "alternate").href
-        }));
-
-      showRelated(posts);
-    } catch (e) {
-      console.warn("Related posts fetch error:", e);
-    }
+  const inject = posts => {
+    if (!posts || posts.length === 0) return;
+    const container = document.createElement("div");
+    container.style = "margin:30px 0;padding:20px;background:#f9f9f9;border-left:4px solid #007bff;border-radius:8px;";
+    container.innerHTML = "<h3 style='margin:0 0 10px;'>📚 People Also Read</h3><ul style='list-style:none;padding-left:0;'>";
+    posts.slice(0, 3).forEach(p => {
+      const li = document.createElement("li");
+      li.style = "margin:8px 0;";
+      li.innerHTML = `<a href="${p.link}" style="color:#007bff;text-decoration:none;">📌 ${p.title}</a>`;
+      container.querySelector("ul").appendChild(li);
+    });
+    const content = document.querySelector(".post-body, .entry-content, article, .mobile-post");
+    content && content.parentNode.insertBefore(container, content.nextSibling);
   };
-
-  fetchPosts();
+  const slug = getSlug();
+  const domain = location.origin;
+  const url = `${domain}/feeds/posts/default?alt=json&max-results=10`;
+  fetch(url).then(r => r.json()).then(json => {
+    const en = json.feed.entry || [];
+    const posts = en.map(e => ({
+      title: e.title.$t,
+      link: e.link.find(l => l.rel === "alternate").href.split('?')[0]
+    })).filter(p => !p.link.includes(slug));
+    inject(posts.sort(() => 0.5 - Math.random()));
+  }).catch(e => console.warn("Related fetch error:", e));
 })();
