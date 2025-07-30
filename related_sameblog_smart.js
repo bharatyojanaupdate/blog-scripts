@@ -19,7 +19,7 @@
   };
   const slug = getSlug();
   const domain = location.origin;
-  const url = `${domain}/feeds/posts/default?alt=json&max-results=10`;
+  const url = `${domain}/feeds/posts/default?alt=json&max-results=20`;
   fetch(url).then(r => r.json()).then(json => {
     const en = json.feed.entry || [];
     const posts = en.map(e => ({
