@@ -8,7 +8,7 @@
     const container = document.createElement("div");
     container.style = "margin:30px 0;padding:20px;background:#f9f9f9;border-left:4px solid #007bff;border-radius:8px;";
     container.innerHTML = "<h3 style='margin:0 0 10px;'>📚 People Also Read</h3><ul style='list-style:none;padding-left:0;'>";
-    posts.slice(0, 3).forEach(p => {
+    posts.slice(0, 5).forEach(p => {
       const li = document.createElement("li");
       li.style = "margin:8px 0;";
       li.innerHTML = `<a href="${p.link}" style="color:#007bff;text-decoration:none;">📌 ${p.title}</a>`;
